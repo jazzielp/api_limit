@@ -9,7 +9,9 @@ try {
   const app = createApp(env);
   server = app.listen(env.PORT, () => {
     // eslint-disable-next-line no-console
-    console.info(`Server listening on port ${env.PORT} in ${env.NODE_ENV} mode`);
+    console.info(
+      `Server listening on port ${env.PORT} in ${env.NODE_ENV} mode`,
+    );
   });
 } catch (error) {
   // eslint-disable-next-line no-console

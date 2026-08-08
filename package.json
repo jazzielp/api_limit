@@ -4,7 +4,7 @@
   "description": "Express 5 + TypeScript API with JWT auth, email verification, password reset, API keys and per-user daily rate limits.",
   "type": "module",
   "engines": {
-    "node": ">=20.19.0 <21 || >=22.12.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "NODE_ENV=development node --env-file=.env.development node_modules/tsx/dist/cli.mjs watch src/server.ts",
@@ -23,6 +23,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "@scalar/express-api-reference": "0.10.13",
     "argon2": "^0.45.1",
     "express": "^5.0.0",
     "express-rate-limit": "^7.5.0",
@@ -32,7 +33,6 @@
     "pg": "^8.13.0",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
-    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -44,7 +44,6 @@
     "@types/node": "^22.5.0",
     "@types/nodemailer": "^6.4.17",
     "@types/supertest": "^6.0.2",
-    "@types/swagger-ui-express": "^4.1.8",
     "ajv": "^8.20.0",
     "prisma": "^7.9.1",
     "supertest": "^7.0.0",
@@ -53,8 +52,6 @@
     "vitest": "^2.1.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "argon2"
-    ]
+    "onlyBuiltDependencies": ["argon2"]
   }
 }

@@ -2,7 +2,7 @@
 
 Express 5 + TypeScript API with JWT authentication, email verification, password reset, API keys, and a per-user 100-request daily rate limit.
 
-> **API consumers:** Use the interactive Swagger UI at `/docs`, the OpenAPI 3.1 contract at
+> **API consumers:** Use the interactive Scalar API Reference at `/docs`, the OpenAPI 3.1 contract at
 > `/openapi.json`, or the comprehensive [API reference](docs/API.md).
 
 ## Quick path
@@ -38,7 +38,7 @@ src/
 
 ## Prerequisites
 
-- Node.js >= 20
+- Node.js >= 22.12.0
 - pnpm
 - PostgreSQL (real database required; migrations and integration paths use Prisma with the `pg` adapter)
 
@@ -149,7 +149,7 @@ Registration, verification, and login use `/auth/*`. JWT-authenticated `/users/*
 routes require `Authorization: Bearer <access-token>`. The sample `/protected` resource requires
 `X-API-Key: <api-key>`.
 
-With the server running, open `http://localhost:3000/docs` for interactive Swagger UI or fetch the
+With the server running, open `http://localhost:3000/docs` for the interactive Scalar API Reference or fetch the
 machine-readable contract from `http://localhost:3000/openapi.json`. Both documentation endpoints
 are public and contain placeholders only, never runtime secrets.
 

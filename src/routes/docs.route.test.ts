@@ -16,11 +16,7 @@ const AUTH_HEADERS = [
   "RateLimit-Reset",
 ] as const;
 const AUTH_LIMIT_HEADERS = [...AUTH_HEADERS, "Retry-After"] as const;
-const DAILY_HEADERS = [
-  "X-RateLimit-Limit",
-  "X-RateLimit-Remaining",
-  "X-RateLimit-Reset",
-] as const;
+const DAILY_HEADERS = ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"] as const;
 
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 
@@ -331,7 +327,9 @@ function cloneContract(contract: OpenApiContract): OpenApiContract {
   return structuredClone(contract);
 }
 
-function collectEmbeddedSchemas(contract: OpenApiContract): Array<[string, Record<string, unknown>]> {
+function collectEmbeddedSchemas(
+  contract: OpenApiContract,
+): Array<[string, Record<string, unknown>]> {
   const schemas: Array<[string, Record<string, unknown>]> = [];
   const seen = new WeakSet<object>();
 
@@ -404,12 +402,6 @@ async function probeOperation(method: string, path: string): Promise<number> {
   }
 }
 
-function parseSwaggerInitializerOptions(source: string): Record<string, unknown> {
-  const match = source.match(/var options = ([\s\S]*?);\n/);
-  if (match?.[1] === undefined) throw new Error("Swagger initializer options were not found");
-  return JSON.parse(match[1]) as Record<string, unknown>;
-}
-
 describe("API documentation", () => {
   it("serves an OpenAPI 3.1 document valid at both document and Schema Object layers", async () => {
     const response = await request(app).get("/openapi.json").expect(200);
@@ -432,9 +424,9 @@ describe("API documentation", () => {
     properties.id.type = "uuid";
 
     const invalidInlineSchema = cloneContract(contract);
-    const listSchema = invalidInlineSchema.paths["/api-keys"].get.responses["200"].content?.[
-      "application/json"
-    ].schema;
+    const listSchema =
+      invalidInlineSchema.paths["/api-keys"].get.responses["200"].content?.["application/json"]
+        .schema;
     if (listSchema === undefined) throw new Error("List API keys response schema is missing");
     listSchema.items = "ApiKeySummary";
 
@@ -539,40 +531,51 @@ describe("API documentation", () => {
     }
   });
 
-  it("redirects to Swagger UI and serves CSP-compatible same-origin assets", async () => {
-    const redirect = await request(app).get("/docs").expect(301);
-    expect(redirect.headers.location).toBe("/docs/");
-
-    const page = await request(app).get("/docs/").expect(200);
+  it("serves Scalar API Reference with a pinned CDN script and matching CSP nonces", async () => {
+    const page = await request(app).get("/docs").expect(200);
     expect(page.headers["content-type"]).toMatch(/^text\/html/);
-    expect(page.text).toContain("<title>api_limit API documentation</title>");
-    expect(page.text).toContain('<div id="swagger-ui"></div>');
-    expect(page.text).toContain('href="./swagger-ui.css"');
-    expect(page.text).toContain('src="./swagger-ui-bundle.js"');
-    expect(page.text).toContain('src="./swagger-ui-standalone-preset.js"');
-    expect(page.text).toContain('src="./swagger-ui-init.js"');
-    expect(page.text).not.toMatch(/<script(?![^>]*\bsrc=)/);
-    expect(page.headers["content-security-policy"]).toContain("script-src 'self'");
-    expect(page.headers["content-security-policy"]).toContain("style-src 'self'");
+    expect(page.text).toContain("<title>Scalar API Reference</title>");
+    expect(page.text).toContain('<div id="app"></div>');
+    expect(page.text).toContain('src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.64.1"');
 
-    const css = await request(app).get("/docs/swagger-ui.css").expect(200);
-    const bundle = await request(app).get("/docs/swagger-ui-bundle.js").expect(200);
-    expect(css.headers["content-type"]).toMatch(/^text\/css/);
-    expect(css.text).toContain(".swagger-ui");
-    expect(bundle.headers["content-type"]).toMatch(/^(text|application)\/javascript/);
-    expect(bundle.text).toContain("SwaggerUIBundle");
+    const csp = page.headers["content-security-policy"];
+    expect(csp).toContain("script-src 'self' https://cdn.jsdelivr.net");
+    const cspNonce = csp.match(/'nonce-([^']+)'/)?.[1];
+    expect(cspNonce).toBeTruthy();
+    const scriptNonces = [...page.text.matchAll(/<script\b([^>]*)>/g)].map(
+      ([, attributes]) => attributes.match(/\bnonce="([^"]+)"/)?.[1],
+    );
+    expect(scriptNonces.length).toBeGreaterThan(0);
+    expect(scriptNonces.every((nonce) => nonce === cspNonce)).toBe(true);
+    expect(page.text).toContain(`<meta property="csp-nonce" content="${cspNonce}" />`);
+    const styleNonces = [...page.text.matchAll(/<style\b([^>]*)>/g)].map(
+      ([, attributes]) => attributes.match(/\bnonce="([^"]+)"/)?.[1],
+    );
+    expect(styleNonces.every((nonce) => nonce === cspNonce)).toBe(true);
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+    expect(csp).not.toContain("script-src 'unsafe-inline'");
   });
 
-  it("emits only approved Swagger initializer configuration and fetches the contract externally", async () => {
-    const initializer = await request(app).get("/docs/swagger-ui-init.js").expect(200);
+  it("serves Scalar HTML only on the exact documentation GET paths", async () => {
+    for (const path of ["/docs", "/docs/"]) {
+      await request(app).get(path).expect(200);
+    }
 
-    expect(initializer.headers["content-type"]).toMatch(/^application\/javascript/);
-    expect(parseSwaggerInitializerOptions(initializer.text)).toEqual({
-      customOptions: {
-        url: "/openapi.json",
-        validatorUrl: null,
-      },
-    });
+    for (const path of ["/docs/unknown", "/docs/unknown/nested"]) {
+      const response = await request(app).get(path).expect(404);
+      expect(response.text).not.toContain("<title>Scalar API Reference</title>");
+    }
+
+    for (const method of ["post", "put", "patch", "delete"] as const) {
+      const response = await request(app)[method]("/docs").expect(404);
+      expect(response.text).not.toContain("<title>Scalar API Reference</title>");
+    }
+  });
+
+  it("configures Scalar to fetch the OpenAPI contract externally", async () => {
+    const page = await request(app).get("/docs").expect(200);
+
+    expect(page.text).toContain('"url": "/openapi.json"');
   });
 
   it("keeps documentation public while protected routes still require credentials", async () => {

@@ -36,7 +36,7 @@ that URL.
 
 1. Install dependencies and prepare the database as described in the [local development](#local-development) section.
 2. Start the API with `pnpm dev`.
-3. Open `http://localhost:3000/docs` for interactive Swagger UI, or retrieve the machine-readable
+3. Open `http://localhost:3000/docs` for the interactive Scalar API Reference, or retrieve the machine-readable
    contract from `http://localhost:3000/openapi.json`.
 4. Confirm liveness and database readiness:
 
@@ -911,7 +911,7 @@ forwarded headers lets clients spoof their IP.
 
 ## Local development
 
-Prerequisites are Node.js 20 or newer, pnpm, and PostgreSQL. The package scripts select their own
+Prerequisites are Node.js 22.12.0 or newer, pnpm, and PostgreSQL. The package scripts select their own
 environment file; consult `.env.example` for placeholders, but never place real secrets in source
 control.
 
