@@ -21,7 +21,7 @@ export const rateLimitRepository: RateLimitRepository = {
     const lockId = advisoryLockId(userId, date);
 
     return prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(${lockId})`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
 
       const existing = await tx.$queryRaw<{ count: number }[]>`
         SELECT count
