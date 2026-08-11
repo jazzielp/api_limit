@@ -1,0 +1,16 @@
+on:
+  push:
+    branches: [main]
+
+jobs:
+  hello:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Hello
+        run: echo "Hello, world!"
+
+      - name: ver fecha del runner
+        run: date
+
+      - name: ver archivos disponibles
+        run: ls -la
