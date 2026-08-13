@@ -13,7 +13,7 @@ concurrency:
 jobs:
   quality:
     name: Lint, typecheck, test, build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 15
 
     steps:
