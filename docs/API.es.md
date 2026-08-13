@@ -6,17 +6,17 @@ ejemplo protegido por clave de API con una cuota diaria por usuario.
 
 ## Vista general
 
-| Elemento | Valor |
-|---|---|
-| URL base local | `http://localhost:3000` por defecto |
-| Prefijo de versión de la API | Ninguno |
-| Tipo de contenido de las solicitudes | `application/json` para solicitudes con cuerpo |
-| Formato de respuesta | JSON, excepto las respuestas exitosas `204 No Content` |
-| Documentación interactiva | `/docs` |
-| Contrato OpenAPI 3.1 | `/openapi.json` |
-| Autenticación de cuenta | `Authorization: Bearer <access-token>` |
-| Autenticación del recurso protegido | `X-API-Key: <api-key>` |
-| Cuota diaria del recurso protegido | 100 solicitudes por usuario y día UTC |
+| Elemento                             | Valor                                                  |
+| ------------------------------------ | ------------------------------------------------------ |
+| URL base local                       | `http://localhost:3000` por defecto                    |
+| Prefijo de versión de la API         | Ninguno                                                |
+| Tipo de contenido de las solicitudes | `application/json` para solicitudes con cuerpo         |
+| Formato de respuesta                 | JSON, excepto las respuestas exitosas `204 No Content` |
+| Documentación interactiva            | `/docs`                                                |
+| Contrato OpenAPI 3.1                 | `/openapi.json`                                        |
+| Autenticación de cuenta              | `Authorization: Bearer <access-token>`                 |
+| Autenticación del recurso protegido  | `X-API-Key: <api-key>`                                 |
+| Cuota diaria del recurso protegido   | 100 solicitudes por usuario y día UTC                  |
 
 El operador del despliegue define la URL base de producción. Las rutas de este documento son relativas
 a esa URL.
@@ -156,23 +156,23 @@ Los cambios de contraseña no revocan las claves de API. Revoca las claves expl�
 
 ## Resumen de endpoints
 
-| Método | Ruta | Autenticación | Éxito |
-|---|---|---|---|
-| `GET` | `/health` | Ninguna | `200` |
-| `GET` | `/health/ready` | Ninguna | `200` |
-| `POST` | `/auth/register` | Ninguna | `201` |
-| `POST` | `/auth/login` | Ninguna | `200` |
-| `POST` | `/auth/verify-email` | Ninguna | `200` |
-| `POST` | `/auth/resend-verification` | Ninguna | `200` |
-| `POST` | `/auth/forgot-password` | Ninguna | `204` |
-| `POST` | `/auth/reset-password` | Ninguna | `204` |
-| `GET` | `/users/me` | JWT | `200` |
-| `PATCH` | `/users/me` | JWT | `200` |
-| `POST` | `/users/me/change-password` | JWT | `204` |
-| `POST` | `/api-keys` | JWT | `201` |
-| `GET` | `/api-keys` | JWT | `200` |
-| `DELETE` | `/api-keys/:id` | JWT | `204` |
-| `GET` | `/protected` | Clave de API | `200` |
+| Método   | Ruta                        | Autenticación | Éxito |
+| -------- | --------------------------- | ------------- | ----- |
+| `GET`    | `/health`                   | Ninguna       | `200` |
+| `GET`    | `/health/ready`             | Ninguna       | `200` |
+| `POST`   | `/auth/register`            | Ninguna       | `201` |
+| `POST`   | `/auth/login`               | Ninguna       | `200` |
+| `POST`   | `/auth/verify-email`        | Ninguna       | `200` |
+| `POST`   | `/auth/resend-verification` | Ninguna       | `200` |
+| `POST`   | `/auth/forgot-password`     | Ninguna       | `204` |
+| `POST`   | `/auth/reset-password`      | Ninguna       | `204` |
+| `GET`    | `/users/me`                 | JWT           | `200` |
+| `PATCH`  | `/users/me`                 | JWT           | `200` |
+| `POST`   | `/users/me/change-password` | JWT           | `204` |
+| `POST`   | `/api-keys`                 | JWT           | `201` |
+| `GET`    | `/api-keys`                 | JWT           | `200` |
+| `DELETE` | `/api-keys/:id`             | JWT           | `204` |
+| `GET`    | `/protected`                | Clave de API  | `200` |
 
 Los seis endpoints `/auth/*` también usan el [límite de intentos de autenticación](#límite-de-intentos-de-autenticación).
 
@@ -229,6 +229,8 @@ curl http://localhost:3000/health/ready
 }
 ```
 
+Commet
+
 ## Endpoints de cuenta y autenticación
 
 ### `POST /auth/register`
@@ -237,10 +239,10 @@ Crea una cuenta sin verificar y envía un código de verificación de seis dígi
 
 **Cuerpo de la solicitud**
 
-| Campo | Tipo | Reglas |
-|---|---|---|
-| `email` | string | Obligatorio; dirección de email válida |
-| `password` | string | Obligatorio; al menos 8 caracteres |
+| Campo      | Tipo   | Reglas                                 |
+| ---------- | ------ | -------------------------------------- |
+| `email`    | string | Obligatorio; dirección de email válida |
+| `password` | string | Obligatorio; al menos 8 caracteres     |
 
 Las direcciones de email aceptadas se almacenan en minúsculas. La validación ocurre antes de la
 normalización, por lo que una dirección válida con espacios se rechaza en lugar de recortarse y aceptarse.
@@ -281,10 +283,10 @@ Autentica una cuenta verificada y devuelve un JWT.
 
 **Cuerpo de la solicitud**
 
-| Campo | Tipo | Reglas |
-|---|---|---|
-| `email` | string | Obligatorio; dirección de email válida |
-| `password` | string | Obligatorio; al menos 8 caracteres |
+| Campo      | Tipo   | Reglas                                 |
+| ---------- | ------ | -------------------------------------- |
+| `email`    | string | Obligatorio; dirección de email válida |
+| `password` | string | Obligatorio; al menos 8 caracteres     |
 
 ```json
 {
@@ -337,10 +339,10 @@ Verifica una cuenta con el código enviado durante el registro o mediante el end
 
 **Cuerpo de la solicitud**
 
-| Campo | Tipo | Reglas |
-|---|---|---|
+| Campo   | Tipo   | Reglas                                 |
+| ------- | ------ | -------------------------------------- |
 | `email` | string | Obligatorio; dirección de email válida |
-| `code` | string | Obligatorio; exactamente 6 caracteres |
+| `code`  | string | Obligatorio; exactamente 6 caracteres  |
 
 ```json
 {
@@ -442,9 +444,9 @@ Consume un token de restablecimiento de contraseña y establece una nueva contra
 
 **Cuerpo de la solicitud**
 
-| Campo | Tipo | Reglas |
-|---|---|---|
-| `token` | string | Obligatorio; al menos 1 carácter |
+| Campo      | Tipo   | Reglas                             |
+| ---------- | ------ | ---------------------------------- |
+| `token`    | string | Obligatorio; al menos 1 carácter   |
 | `password` | string | Obligatorio; al menos 8 caracteres |
 
 ```json
@@ -506,8 +508,8 @@ Actualiza el nombre visible de la cuenta actual.
 
 **Cuerpo de la solicitud**
 
-| Campo | Tipo | Reglas |
-|---|---|---|
+| Campo  | Tipo   | Reglas                                              |
+| ------ | ------ | --------------------------------------------------- |
 | `name` | string | Opcional; cuando está presente, al menos 1 carácter |
 
 ```json
@@ -538,10 +540,10 @@ Cambia la contraseña después de comprobar la contraseña actual.
 
 **Cuerpo de la solicitud**
 
-| Campo | Tipo | Reglas |
-|---|---|---|
-| `currentPassword` | string | Obligatorio; al menos 1 carácter |
-| `newPassword` | string | Obligatorio; al menos 8 caracteres |
+| Campo             | Tipo   | Reglas                             |
+| ----------------- | ------ | ---------------------------------- |
+| `currentPassword` | string | Obligatorio; al menos 1 carácter   |
+| `newPassword`     | string | Obligatorio; al menos 8 caracteres |
 
 ```json
 {
@@ -765,11 +767,11 @@ que las solicitudes simultáneas no puedan eludir la cuota.
 La solicitud número 100 tiene éxito con `X-RateLimit-Remaining: 0`. Las solicitudes posteriores devuelven
 `429` y no incrementan el contador. La cuota se reinicia a la próxima medianoche UTC.
 
-| Header | Significado |
-|---|---|
-| `X-RateLimit-Limit` | Límite diario; actualmente `100` |
-| `X-RateLimit-Remaining` | Solicitudes exitosas restantes durante el día UTC actual |
-| `X-RateLimit-Reset` | Marca de tiempo Unix en segundos de la próxima medianoche UTC |
+| Header                  | Significado                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| `X-RateLimit-Limit`     | Límite diario; actualmente `100`                              |
+| `X-RateLimit-Remaining` | Solicitudes exitosas restantes durante el día UTC actual      |
+| `X-RateLimit-Reset`     | Marca de tiempo Unix en segundos de la próxima medianoche UTC |
 
 Estos headers `X-RateLimit-*` se devuelven en las respuestas exitosas y en las respuestas de `/protected`
 que exceden el límite diario. Los fallos de autenticación de la clave de API ocurren antes del consumo de
@@ -820,16 +822,16 @@ Los errores de la aplicación usan esta estructura:
 
 Los errores de validación agregan `error.issues`. Los códigos legibles por máquinas implementados son:
 
-| Código | Estado habitual | Significado |
-|---|---|---|
-| `VALIDATION_ERROR` | `400` | Campos de solicitud, código de verificación o token de restablecimiento inválidos |
-| `UNAUTHORIZED` | `401` | JWT o clave de API ausente o inválido, inicio de sesión inválido o contraseña actual incorrecta |
-| `TOKEN_VERSION_MISMATCH` | `401` | JWT invalidado por un cambio o restablecimiento de contraseña |
-| `EMAIL_NOT_VERIFIED` | `403` | Credenciales de inicio de sesión correctas, pero la verificación del email está incompleta |
-| `NOT_FOUND` | `404` | No se encontró el usuario o la clave de API para la cuenta autenticada |
-| `CONFLICT` | `409` | El email de registro ya está en uso |
-| `RATE_LIMIT_EXCEEDED` | `429` | Se excedió el límite de intentos de autenticación, reenvíos o cuota diaria |
-| `INTERNAL_ERROR` | `500` | Fallo inesperado del servidor |
+| Código                   | Estado habitual | Significado                                                                                     |
+| ------------------------ | --------------- | ----------------------------------------------------------------------------------------------- |
+| `VALIDATION_ERROR`       | `400`           | Campos de solicitud, código de verificación o token de restablecimiento inválidos               |
+| `UNAUTHORIZED`           | `401`           | JWT o clave de API ausente o inválido, inicio de sesión inválido o contraseña actual incorrecta |
+| `TOKEN_VERSION_MISMATCH` | `401`           | JWT invalidado por un cambio o restablecimiento de contraseña                                   |
+| `EMAIL_NOT_VERIFIED`     | `403`           | Credenciales de inicio de sesión correctas, pero la verificación del email está incompleta      |
+| `NOT_FOUND`              | `404`           | No se encontró el usuario o la clave de API para la cuenta autenticada                          |
+| `CONFLICT`               | `409`           | El email de registro ya está en uso                                                             |
+| `RATE_LIMIT_EXCEEDED`    | `429`           | Se excedió el límite de intentos de autenticación, reenvíos o cuota diaria                      |
+| `INTERNAL_ERROR`         | `500`           | Fallo inesperado del servidor                                                                   |
 
 Un fallo inesperado se sanea:
 
@@ -855,23 +857,23 @@ servidor SMTP configurado.
 
 Propiedades de verificación:
 
-| Propiedad | Comportamiento |
-|---|---|
-| Formato del código | Cadena de seis dígitos |
-| Duración | 30 minutos |
-| Intentos fallidos | 5 |
-| Intervalo de reenvío | 1 minuto |
-| Efecto del reenvío | Reemplaza el código y restaura su duración y cantidad de intentos |
+| Propiedad            | Comportamiento                                                    |
+| -------------------- | ----------------------------------------------------------------- |
+| Formato del código   | Cadena de seis dígitos                                            |
+| Duración             | 30 minutos                                                        |
+| Intentos fallidos    | 5                                                                 |
+| Intervalo de reenvío | 1 minuto                                                          |
+| Efecto del reenvío   | Reemplaza el código y restaura su duración y cantidad de intentos |
 
 Propiedades del restablecimiento de contraseña:
 
-| Propiedad | Comportamiento |
-|---|---|
-| Duración del token | 15 minutos |
-| Reutilización | Un solo uso |
-| Nueva solicitud | Elimina los tokens anteriores sin usar de esa cuenta |
-| Restablecimiento exitoso | Marca como usados todos los tokens sin usar e invalida los JWT existentes |
-| Protección contra revelación | Forgot-password devuelve `204` exista o no el email |
+| Propiedad                    | Comportamiento                                                            |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| Duración del token           | 15 minutos                                                                |
+| Reutilización                | Un solo uso                                                               |
+| Nueva solicitud              | Elimina los tokens anteriores sin usar de esa cuenta                      |
+| Restablecimiento exitoso     | Marca como usados todos los tokens sin usar e invalida los JWT existentes |
+| Protección contra revelación | Forgot-password devuelve `204` exista o no el email                       |
 
 El servidor construye el enlace del email agregando un parámetro de consulta `token` a
 `RESET_PASSWORD_URL`. El frontend de esa URL debe leer el token y enviarlo a `POST /auth/reset-password`.
@@ -887,25 +889,25 @@ plataforma de despliegue o un gestor de secretos sin un archivo físico, omite e
 NODE_ENV=production node dist/server.js
 ```
 
-| Variable | Requisito | Valor predeterminado y restricciones |
-|---|---|---|
-| `NODE_ENV` | Opcional | `development`; acepta `development`, `test` o `production` |
-| `PORT` | Opcional | `3000`; entero de 1 a 65535 |
-| `DATABASE_URL` | Obligatoria | Cadena de conexión PostgreSQL no vacía |
-| `JWT_SECRET` | Obligatoria, secreta | Al menos 32 caracteres |
-| `JWT_ISSUER` | Opcional | `api_limit` |
-| `JWT_AUDIENCE` | Opcional | `api_limit_users` |
-| `ACCESS_TOKEN_TTL_MINUTES` | Opcional | `15`; entero positivo |
-| `MAIL_DRIVER` | Opcional | `console`; acepta `console` o `smtp` |
-| `MAIL_FROM` | Opcional | `noreply@example.com`; dirección de email válida |
-| `RESET_PASSWORD_URL` | Obligatoria en producción | URL absoluta válida; fuera de producción, fallback local `http://localhost:3000/reset-password` |
-| `SMTP_HOST` | Obligatoria con SMTP | No vacía cuando `MAIL_DRIVER=smtp` |
-| `SMTP_PORT` | Obligatoria con SMTP | Entero de 1 a 65535 |
-| `SMTP_SECURE` | Opcional | Su valor predeterminado es `false` cuando se omite; ver la nota siguiente |
-| `SMTP_USER` | Opcional | Nombre de usuario de autenticación SMTP |
-| `SMTP_PASS` | Opcional, secreta | Contraseña de autenticación SMTP |
-| `LOG_LEVEL` | Opcional | `info`; acepta `trace`, `debug`, `info`, `warn`, `error`, `fatal` o `silent` |
-| `TRUST_PROXY` | Opcional | `false`; acepta `true`, `false`, un número de saltos o una cadena de trust-proxy de Express |
+| Variable                   | Requisito                 | Valor predeterminado y restricciones                                                            |
+| -------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                 | Opcional                  | `development`; acepta `development`, `test` o `production`                                      |
+| `PORT`                     | Opcional                  | `3000`; entero de 1 a 65535                                                                     |
+| `DATABASE_URL`             | Obligatoria               | Cadena de conexión PostgreSQL no vacía                                                          |
+| `JWT_SECRET`               | Obligatoria, secreta      | Al menos 32 caracteres                                                                          |
+| `JWT_ISSUER`               | Opcional                  | `api_limit`                                                                                     |
+| `JWT_AUDIENCE`             | Opcional                  | `api_limit_users`                                                                               |
+| `ACCESS_TOKEN_TTL_MINUTES` | Opcional                  | `15`; entero positivo                                                                           |
+| `MAIL_DRIVER`              | Opcional                  | `console`; acepta `console` o `smtp`                                                            |
+| `MAIL_FROM`                | Opcional                  | `noreply@example.com`; dirección de email válida                                                |
+| `RESET_PASSWORD_URL`       | Obligatoria en producción | URL absoluta válida; fuera de producción, fallback local `http://localhost:3000/reset-password` |
+| `SMTP_HOST`                | Obligatoria con SMTP      | No vacía cuando `MAIL_DRIVER=smtp`                                                              |
+| `SMTP_PORT`                | Obligatoria con SMTP      | Entero de 1 a 65535                                                                             |
+| `SMTP_SECURE`              | Opcional                  | Su valor predeterminado es `false` cuando se omite; ver la nota siguiente                       |
+| `SMTP_USER`                | Opcional                  | Nombre de usuario de autenticación SMTP                                                         |
+| `SMTP_PASS`                | Opcional, secreta         | Contraseña de autenticación SMTP                                                                |
+| `LOG_LEVEL`                | Opcional                  | `info`; acepta `trace`, `debug`, `info`, `warn`, `error`, `fatal` o `silent`                    |
+| `TRUST_PROXY`              | Opcional                  | `false`; acepta `true`, `false`, un número de saltos o una cadena de trust-proxy de Express     |
 
 Actualmente, `SMTP_SECURE` usa la coerción booleana de JavaScript. Como los valores del entorno son cadenas,
 omite la variable para obtener `false`; un valor no vacío, incluida la cadena `"false"`, se convierte en
@@ -939,20 +941,20 @@ pnpm test
 pnpm build
 ```
 
-| Comando | Propósito |
-|---|---|
-| `pnpm dev` | Ejecutar el servidor TypeScript en modo watch con configuración de desarrollo |
-| `pnpm build` | Compilar TypeScript en `dist/` |
-| `pnpm start` | Ejecutar el servidor de producción compilado |
-| `pnpm test` | Ejecutar Vitest una vez con configuración de pruebas |
-| `pnpm test:watch` | Ejecutar Vitest en modo watch |
-| `pnpm typecheck` | Comprobar los tipos sin emitir archivos |
-| `pnpm lint` | Ejecutar las comprobaciones de Biome |
-| `pnpm format` | Formatear archivos con Biome |
-| `pnpm prisma:generate` | Generar el cliente de Prisma |
-| `pnpm prisma:migrate` | Crear y aplicar migraciones de desarrollo |
-| `pnpm prisma:migrate:prod` | Aplicar migraciones existentes en producción |
-| `pnpm prisma:studio` | Abrir Prisma Studio |
+| Comando                    | Propósito                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| `pnpm dev`                 | Ejecutar el servidor TypeScript en modo watch con configuración de desarrollo |
+| `pnpm build`               | Compilar TypeScript en `dist/`                                                |
+| `pnpm start`               | Ejecutar el servidor de producción compilado                                  |
+| `pnpm test`                | Ejecutar Vitest una vez con configuración de pruebas                          |
+| `pnpm test:watch`          | Ejecutar Vitest en modo watch                                                 |
+| `pnpm typecheck`           | Comprobar los tipos sin emitir archivos                                       |
+| `pnpm lint`                | Ejecutar las comprobaciones de Biome                                          |
+| `pnpm format`              | Formatear archivos con Biome                                                  |
+| `pnpm prisma:generate`     | Generar el cliente de Prisma                                                  |
+| `pnpm prisma:migrate`      | Crear y aplicar migraciones de desarrollo                                     |
+| `pnpm prisma:migrate:prod` | Aplicar migraciones existentes en producción                                  |
+| `pnpm prisma:studio`       | Abrir Prisma Studio                                                           |
 
 `pnpm prisma:migrate` siempre carga `.env.development`; no migra la base de datos de pruebas. Para aplicar
 migraciones existentes a la base de datos configurada en `.env.test`, ejecuta:
