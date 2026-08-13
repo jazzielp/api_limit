@@ -13,10 +13,7 @@ describe("authentication rate-limit response headers", () => {
     app.use(errorHandler);
 
     for (let attempt = 0; attempt < 10; attempt += 1) {
-      await request(app)
-        .post("/auth")
-        .send({ email: "retry-after@example.com" })
-        .expect(204);
+      await request(app).post("/auth").send({ email: "retry-after@example.com" }).expect(204);
     }
 
     const limited = await request(app)
