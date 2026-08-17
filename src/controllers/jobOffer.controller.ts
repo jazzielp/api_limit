@@ -1,31 +1,45 @@
 import type { Request, Response } from "express";
 import { RateLimitExceededError } from "../lib/errors.js";
-import { jobOfferService } from "../services/jobOffer.service.js";
 import { rateLimitService } from "../services/rateLimit.service.js";
-import  { type IAService } from "../types/AIServices.js";
+import { type IAService } from "../types/AIServices.js";
+import { openaiService } from "../services/IA/openia.js";
+
+const services: IAService[] = [openaiService];
+
+let currentServiceIndex = 0;
+
+export function nextService() {
+  const service = services[currentServiceIndex];
+  currentServiceIndex = (currentServiceIndex + 1) % services.length;
+  return service;
+}
 
 export const jobOfferController = {
-
-  const services: IAService[] = [];
-
   async parse(req: Request, res: Response) {
     const userId = req.apiKeyUserId!;
 
     try {
+      const service = nextService();
       const status = await rateLimitService.consume(userId);
 
       res.setHeader("X-RateLimit-Limit", String(status.limit));
       res.setHeader("X-RateLimit-Remaining", String(status.remaining));
-      res.setHeader("X-RateLimit-Reset", String(Math.floor(status.resetAt.getTime() / 1000)));
+      res.setHeader(
+        "X-RateLimit-Reset",
+        String(Math.floor(status.resetAt.getTime() / 1000)),
+      );
 
-      const offer = await jobOfferService.parse(req.body.text);
+      const offer = await service.extract(req.body.text);
 
       return res.status(200).json(offer);
     } catch (error) {
       if (error instanceof RateLimitExceededError) {
         res.setHeader("X-RateLimit-Limit", String(error.limit));
         res.setHeader("X-RateLimit-Remaining", String(0));
-        res.setHeader("X-RateLimit-Reset", String(Math.floor(error.resetAt.getTime() / 1000)));
+        res.setHeader(
+          "X-RateLimit-Reset",
+          String(Math.floor(error.resetAt.getTime() / 1000)),
+        );
         return res.status(429).json({
           error: {
             message: error.message,

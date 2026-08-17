@@ -62,7 +62,7 @@ export const envSchema = z
     SMTP_SECURE: z.coerce.boolean().default(false),
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
-    OEPNIA_API_KEY: z.string().min(1),
+    OPENIA_API_KEY: z.string().min(1),
     OPENIA_MODEL: z.string().min(1),
     LOG_LEVEL: z
       .enum([
