@@ -224,17 +224,24 @@ const OPERATION_MATRIX: Record<string, ExpectedOperation> = {
     },
     responseHeaders: { "204": [], "401": [], "404": [], "500": [] },
   },
-  "GET /protected": {
-    operationId: "getProtectedResource",
+  "POST /job-offers/parse": {
+    operationId: "parseJobOffer",
     security: [{ apiKeyAuth: [] }],
-    requestSchema: null,
+    requestSchema: "ParseJobOfferRequest",
     responseSchemas: {
-      "200": ref("HealthResponse"),
+      "200": ref("JobOffer"),
+      "400": ref("ValidationErrorResponse"),
       "401": ref("ErrorResponse"),
       "429": ref("ErrorResponse"),
       "500": ref("ErrorResponse"),
     },
-    responseHeaders: { "200": DAILY_HEADERS, "401": [], "429": DAILY_HEADERS, "500": [] },
+    responseHeaders: {
+      "200": DAILY_HEADERS,
+      "400": [],
+      "401": [],
+      "429": DAILY_HEADERS,
+      "500": [],
+    },
   },
 };
 
@@ -292,6 +299,11 @@ const REQUEST_SCHEMAS = {
     type: "object",
     required: ["name"],
     properties: { name: { type: "string", minLength: 1 } },
+  },
+  ParseJobOfferRequest: {
+    type: "object",
+    required: ["text"],
+    properties: { text: { type: "string", minLength: 1, maxLength: 20000 } },
   },
 } as const;
 
@@ -581,6 +593,6 @@ describe("API documentation", () => {
   it("keeps documentation public while protected routes still require credentials", async () => {
     await request(app).get("/openapi.json").expect(200);
     await request(app).get("/users/me").expect(401);
-    await request(app).get("/protected").expect(401);
+    await request(app).post("/job-offers/parse").send({ text: "any" }).expect(401);
   });
 });

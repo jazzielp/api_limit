@@ -146,7 +146,7 @@ NODE_ENV=production node dist/server.js
 ## API usage
 
 Registration, verification, and login use `/auth/*`. JWT-authenticated `/users/*` and `/api-keys/*`
-routes require `Authorization: Bearer <access-token>`. The sample `/protected` resource requires
+routes require `Authorization: Bearer <access-token>`. The `POST /job-offers/parse` resource requires
 `X-API-Key: <api-key>`.
 
 With the server running, open `http://localhost:3000/docs` for the interactive Scalar API Reference or fetch the
@@ -173,10 +173,10 @@ Nodemailer starts without TLS and may upgrade the connection with STARTTLS when 
   `RateLimit-Reset` headers. Legacy `X-RateLimit-*` auth headers are disabled.
 - Auth-limit `429` responses also include `Retry-After`, in seconds until the 15-minute fixed window
   resets (`900` at window start). The separate resend-verification service cooldown does not set it.
-- `/protected` consumes a per-user quota of 100 requests per UTC day.
+- `POST /job-offers/parse` consumes a per-user quota of 100 requests per UTC day.
 - The daily counter resets at the next UTC midnight.
 - The `TRUST_PROXY` environment variable configures Express `trust proxy`. Keep it `false` unless the app runs behind a known proxy; then set it to the number of proxy hops (e.g., `1`) or a trusted subnet. This lets the IP-based auth rate limiter see the client IP without blindly trusting arbitrary headers.
-- Response headers on `/protected`:
+- Response headers on `POST /job-offers/parse`:
   - `X-RateLimit-Limit`: 100
   - `X-RateLimit-Remaining`: requests left today
   - `X-RateLimit-Reset`: Unix timestamp of the next UTC midnight

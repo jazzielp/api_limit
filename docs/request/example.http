@@ -1,0 +1,229 @@
+# api_limit — REST Client request collection
+#
+# Requires the VS Code "REST Client" extension (humao.rest-client).
+# Send a request with the "Send Request" link above each one, or Ctrl+Alt+R.
+#
+# Requests are chained: run them top to bottom and the JWT, API key, and API-key id
+# are captured from earlier responses automatically. The only values you must fill
+# in by hand are the ones delivered by email (@verificationCode, @resetToken).
+#
+# Endpoint reference: docs/API.md — interactive docs: http://localhost:3000/docs
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+# Account used by the whole flow. Change these before the first run.
+@email = alice@example.com
+@password = Password123
+@newPassword = Password456
+
+# Delivered by email, not by the API. Copy them here after triggering the flows below.
+@verificationCode = 123456
+@resetToken = paste-the-token-from-the-reset-email
+
+###############################################################################
+# Documentation (public)
+###############################################################################
+
+### Interactive Scalar API Reference (HTML)
+GET {{baseUrl}}/docs
+
+### Machine-readable OpenAPI 3.1 contract
+GET {{baseUrl}}/openapi.json
+
+###############################################################################
+# Health
+###############################################################################
+
+### Process liveness — does not query the database
+GET {{baseUrl}}/health
+
+### Database readiness — 200 when reachable, 503 when not
+GET {{baseUrl}}/health/ready
+
+###############################################################################
+# Authentication
+#
+# Every /auth/* route shares a limit of 10 requests per 15 minutes,
+# keyed by client IP + request-body email. Responses carry RateLimit-* headers.
+###############################################################################
+
+### Register an account — 201, sends a six-character verification code by email
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Resend the verification code — one-minute service cooldown on top of the auth limit
+POST {{baseUrl}}/auth/resend-verification
+Content-Type: {{contentType}}
+
+{
+  "email": "{{email}}"
+}
+
+### Verify the email address — fill @verificationCode with the code from the email
+POST {{baseUrl}}/auth/verify-email
+Content-Type: {{contentType}}
+
+{
+  "email": "{{email}}",
+  "code": "{{verificationCode}}"
+}
+
+### Log in — captures the JWT for every request below
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+@token = {{login.response.body.token}}
+
+### Request a password reset — always 204, never discloses whether the account exists
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: {{contentType}}
+
+{
+  "email": "{{email}}"
+}
+
+### Reset the password — 204, single-use token, invalidates existing JWTs
+POST {{baseUrl}}/auth/reset-password
+Content-Type: {{contentType}}
+
+{
+  "token": "{{resetToken}}",
+  "password": "{{newPassword}}"
+}
+
+###############################################################################
+# Users — require Authorization: Bearer <access-token>
+###############################################################################
+
+### Get the current profile
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### Update the current profile
+PATCH {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Alice Doe"
+}
+
+### Change the current password — 204, invalidates all previously issued JWTs
+POST {{baseUrl}}/users/me/change-password
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "currentPassword": "{{password}}",
+  "newPassword": "{{newPassword}}"
+}
+
+###############################################################################
+# API keys — require a JWT. The plaintext key is returned only once.
+###############################################################################
+
+### Create an API key — captures the plaintext key and its id
+# @name createApiKey
+POST {{baseUrl}}/api-keys
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "production-client"
+}
+
+###
+@apiKey = {{createApiKey.response.body.key}}
+@apiKeyId = {{createApiKey.response.body.id}}
+
+### List active API keys, newest first — never contains the plaintext key
+GET {{baseUrl}}/api-keys
+Authorization: Bearer {{token}}
+
+### Revoke an API key — 204, idempotent, 404 when it belongs to another account
+DELETE {{baseUrl}}/api-keys/{{apiKeyId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# Job offers — authenticated with X-API-Key, consumes the daily quota
+#
+# Parsing is not implemented yet: the response is a fixed simulated JobOffer
+# and the submitted text is ignored. The response shape is the final contract.
+#
+# 100 successful requests per user per UTC day, shared by all of that user's keys.
+# Successful and 429 responses carry X-RateLimit-Limit / -Remaining / -Reset.
+###############################################################################
+
+### Parse a job offer
+POST {{baseUrl}}/job-offers/parse
+X-API-Key: {{apiKey}}
+Content-Type: {{contentType}}
+
+{
+  "text": "Senior Backend Engineer at Acme Corp. We are looking for someone with Node.js, TypeScript and PostgreSQL. Docker and Kubernetes are a plus. English and Spanish required. Hybrid, USD 60,000 - 80,000 per year. Health insurance and 20 paid vacation days."
+}
+
+###############################################################################
+# Error cases — documented failure responses, useful for checking the contract
+###############################################################################
+
+### 400 — empty text. Validation runs before quota consumption, so this is free.
+POST {{baseUrl}}/job-offers/parse
+X-API-Key: {{apiKey}}
+Content-Type: {{contentType}}
+
+{
+  "text": ""
+}
+
+### 400 — missing required field
+POST {{baseUrl}}/job-offers/parse
+X-API-Key: {{apiKey}}
+Content-Type: {{contentType}}
+
+{}
+
+### 401 — missing API key ("Missing API key", code UNAUTHORIZED)
+POST {{baseUrl}}/job-offers/parse
+Content-Type: {{contentType}}
+
+{
+  "text": "Senior Backend Engineer at Acme Corp."
+}
+
+### 401 — unknown or revoked API key ("Invalid API key", code UNAUTHORIZED)
+POST {{baseUrl}}/job-offers/parse
+X-API-Key: apk_definitely-not-a-real-key
+Content-Type: {{contentType}}
+
+{
+  "text": "Senior Backend Engineer at Acme Corp."
+}
+
+### 400 — Zod validation error with an issues array
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "not-an-email",
+  "password": "short"
+}
+
+### 401 — missing or invalid JWT
+GET {{baseUrl}}/users/me
+
+### 404 — unknown route
+GET {{baseUrl}}/does-not-exist

@@ -4,7 +4,7 @@ import { pinoHttp } from "pino-http";
 import { authRouter } from "./routes/auth.routes.js";
 import { userRouter } from "./routes/user.routes.js";
 import { apiKeyRouter } from "./routes/apiKey.routes.js";
-import { protectedRouter } from "./routes/protected.routes.js";
+import { jobOfferRouter } from "./routes/jobOffer.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { authenticate } from "./middleware/authenticate.js";
 import { apiKeyAuth } from "./middleware/apiKeyAuth.js";
@@ -27,7 +27,7 @@ export const APPLICATION_ROUTE_INVENTORY = [
   ["POST", "/api-keys"],
   ["GET", "/api-keys"],
   ["DELETE", "/api-keys/:id"],
-  ["GET", "/protected"],
+  ["POST", "/job-offers/parse"],
 ] as const;
 
 export function createApp(env: Env): Application {
@@ -58,7 +58,7 @@ export function createApp(env: Env): Application {
   app.use("/auth", authRouter);
   app.use("/users", authenticate, userRouter);
   app.use("/api-keys", authenticate, apiKeyRouter);
-  app.use("/protected", apiKeyAuth, protectedRouter);
+  app.use("/job-offers", apiKeyAuth, jobOfferRouter);
 
   app.use(errorHandler);
 

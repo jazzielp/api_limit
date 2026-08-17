@@ -45,5 +45,8 @@ export class RateLimitExceededError extends AppError {
 export function isRecordNotFoundError(
   error: unknown,
 ): error is Prisma.PrismaClientKnownRequestError {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2025"
+  );
 }

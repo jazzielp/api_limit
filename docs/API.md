@@ -1,8 +1,8 @@
 # api_limit API reference
 
 `api_limit` is an Express 5 JSON API for account registration, email verification,
-password-based login, profile management, API-key management, and a sample API-key-protected
-resource with a per-user daily quota.
+password-based login, profile management, API-key management, and an API-key-authenticated
+job-offer parsing resource with a per-user daily quota.
 
 ## At a glance
 
@@ -15,8 +15,8 @@ resource with a per-user daily quota.
 | Interactive documentation | `/docs` |
 | OpenAPI 3.1 contract | `/openapi.json` |
 | Account authentication | `Authorization: Bearer <access-token>` |
-| Protected-resource authentication | `X-API-Key: <api-key>` |
-| Daily protected-resource quota | 100 requests per user per UTC day |
+| Job-offer-resource authentication | `X-API-Key: <api-key>` |
+| Daily job-offer-resource quota | 100 requests per user per UTC day |
 
 The deployment operator defines the production base URL. Paths in this document are relative to
 that URL.
@@ -76,7 +76,7 @@ curl -X POST http://localhost:3000/auth/login \
   -d '{"email":"alice@example.com","password":"Password123"}'
 ```
 
-With the returned JWT, create an API key and use it on the protected resource:
+With the returned JWT, create an API key and use it on the job-offer resource:
 
 ```bash
 curl -X POST http://localhost:3000/api-keys \
@@ -84,8 +84,10 @@ curl -X POST http://localhost:3000/api-keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"production-client"}'
 
-curl -i http://localhost:3000/protected \
-  -H 'X-API-Key: <api-key>'
+curl -i -X POST http://localhost:3000/job-offers/parse \
+  -H 'X-API-Key: <api-key>' \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Senior Backend Engineer at Acme Corp. Node.js, TypeScript, PostgreSQL."}'
 ```
 
 ## Authentication
@@ -140,7 +142,7 @@ A missing header or one that does not start with `Bearer ` returns:
 
 ### API keys
 
-Use an API key only for `/protected`:
+Use an API key only for `/job-offers/*`:
 
 ```http
 X-API-Key: apk_<key-material>
@@ -171,7 +173,7 @@ Password changes do not revoke API keys. Revoke keys explicitly with `DELETE /ap
 | `POST` | `/api-keys` | JWT | `201` |
 | `GET` | `/api-keys` | JWT | `200` |
 | `DELETE` | `/api-keys/:id` | JWT | `204` |
-| `GET` | `/protected` | API key | `200` |
+| `POST` | `/job-offers/parse` | API key | `200` |
 
 All six `/auth/*` endpoints also use the [authentication-attempt rate limit](#authentication-attempt-limit).
 
@@ -657,18 +659,29 @@ list responses.
 The same `404` applies when the key does not exist or belongs to another account. Revoking an already
 revoked key is idempotent and returns `204`.
 
-## Protected resource
+## Job offers
 
-### `GET /protected`
+### `POST /job-offers/parse`
 
-Authenticates an API key and consumes one request from the owning user's daily quota.
+Authenticates an API key, consumes one request from the owning user's daily quota, and returns the
+job offer as structured fields.
+
+> **Parsing is not implemented yet.** The endpoint validates the request and returns a fixed
+> simulated job offer; the submitted `text` is currently ignored. The response shape below is the
+> contract real parsing will fill in, so clients can integrate against it today.
 
 **Request**
 
 ```bash
-curl -i http://localhost:3000/protected \
-  -H 'X-API-Key: <api-key>'
+curl -i -X POST http://localhost:3000/job-offers/parse \
+  -H 'X-API-Key: <api-key>' \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Senior Backend Engineer at Acme Corp. Node.js, TypeScript, PostgreSQL."}'
 ```
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `text` | string | Yes | 1 to 20000 characters |
 
 **Response: `200 OK`**
 
@@ -680,11 +693,31 @@ X-RateLimit-Reset: 1786147200
 Content-Type: application/json; charset=utf-8
 
 {
-  "status": "ok"
+  "jobTitle": "Senior Backend Engineer",
+  "company": "Acme Corp",
+  "mainResponsibilities": [
+    "Design and maintain REST APIs",
+    "Review pull requests and mentor mid-level engineers",
+    "Own service reliability and observability"
+  ],
+  "requiredTechnologies": ["Node.js", "TypeScript", "PostgreSQL"],
+  "optionalTechnologies": ["Docker", "Kubernetes", "Redis"],
+  "languages": ["English", "Spanish"],
+  "workMode": "Hybrid",
+  "salary": "USD 60,000 - 80,000 per year",
+  "benefits": ["Health insurance", "Annual training budget", "20 paid vacation days"]
 }
 ```
 
+Every field is always present. `jobTitle`, `company`, `workMode`, and `salary` are `string | null`;
+the four remaining fields are always arrays of strings, empty when nothing is found.
+
 The numeric header values above are examples. `X-RateLimit-Reset` changes with the next UTC midnight.
+
+**Response: `400 Bad Request`**
+
+Returned when `text` is missing, empty, not a string, or longer than 20000 characters. Validation
+runs before quota consumption, so a rejected request does not count against the daily limit.
 
 **Response: `429 Too Many Requests`**
 
@@ -727,7 +760,7 @@ RateLimit-Reset: 900
 ```
 
 Legacy `X-RateLimit-*` headers are disabled for auth routes. The separate daily quota on
-`GET /protected` uses the custom `X-RateLimit-*` headers documented below.
+`POST /job-offers/parse` uses the custom `X-RateLimit-*` headers documented below.
 
 `RateLimit-Remaining` and `RateLimit-Reset` vary by request. When the limit is exceeded,
 `express-rate-limit` also emits `Retry-After`, measured in whole seconds until the current fixed
@@ -752,7 +785,7 @@ must not infer that header unless it is actually present.
 
 ### Daily API-key limit
 
-`GET /protected` allows 100 successful requests per user per UTC calendar day. All active API keys
+`POST /job-offers/parse` allows 100 successful requests per user per UTC calendar day. All active API keys
 owned by the same user share one counter. The counter operation is serialized in PostgreSQL so
 concurrent requests cannot bypass the quota.
 
@@ -765,8 +798,9 @@ increase the counter. The quota resets at the next UTC midnight.
 | `X-RateLimit-Remaining` | Successful requests remaining in the current UTC day |
 | `X-RateLimit-Reset` | Unix timestamp in seconds for the next UTC midnight |
 
-These `X-RateLimit-*` headers are returned on successful and daily-limit-exceeded `/protected`
-responses. API-key authentication failures occur before quota consumption and do not include them.
+These `X-RateLimit-*` headers are returned on successful and daily-limit-exceeded
+`/job-offers/parse` responses. API-key authentication and body-validation failures occur before
+quota consumption and do not include them.
 
 ## Validation and errors
 

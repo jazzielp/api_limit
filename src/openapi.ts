@@ -68,7 +68,7 @@ export const openApiDocument: Readonly<Record<string, unknown>> = {
     title: "api_limit API",
     version: "1.0.0",
     description:
-      "Account authentication, API-key management, and a sample API-key-protected resource with a per-user daily quota.",
+      "Account authentication, API-key management, and an API-key-authenticated job-offer parsing resource with a per-user daily quota.",
   },
   servers: [{ url: "/", description: "Current server" }],
   tags: [
@@ -76,7 +76,7 @@ export const openApiDocument: Readonly<Record<string, unknown>> = {
     { name: "Authentication" },
     { name: "Users" },
     { name: "API keys" },
-    { name: "Protected" },
+    { name: "Job offers" },
   ],
   paths: {
     "/health": {
@@ -309,20 +309,22 @@ export const openApiDocument: Readonly<Record<string, unknown>> = {
         },
       },
     },
-    "/protected": {
-      get: {
-        tags: ["Protected"],
-        summary: "Consume the daily API-key quota",
+    "/job-offers/parse": {
+      post: {
+        tags: ["Job offers"],
+        summary: "Parse a job offer into structured fields",
         description:
-          "All API keys owned by a user share a quota of 100 successful requests per UTC day.",
-        operationId: "getProtectedResource",
+          "Accepts the raw text of a job offer and returns its structured fields. Parsing is not implemented yet: the response is a fixed simulated job offer and the submitted text is ignored. Consumes one request from the owning user's daily quota; all API keys owned by a user share a quota of 100 successful requests per UTC day.",
+        operationId: "parseJobOffer",
         security: [{ apiKeyAuth: [] }],
+        requestBody: requestBody("ParseJobOfferRequest"),
         responses: {
           "200": jsonResponse(
-            "Request accepted",
-            { $ref: "#/components/schemas/HealthResponse" },
+            "Simulated structured job offer",
+            { $ref: "#/components/schemas/JobOffer" },
             dailyRateLimitHeaders,
           ),
+          "400": validationErrorResponse,
           "401": errorResponse("Missing, invalid, or revoked API key"),
           "429": jsonResponse(
             "Daily quota exceeded",
@@ -381,11 +383,11 @@ export const openApiDocument: Readonly<Record<string, unknown>> = {
         schema: { type: "integer", minimum: 0, example: 900 },
       },
       DailyRateLimit: {
-        description: "Maximum protected requests per user per UTC day.",
+        description: "Maximum API-key requests per user per UTC day.",
         schema: { type: "integer", example: 100 },
       },
       DailyRateLimitRemaining: {
-        description: "Protected requests remaining in the current UTC day.",
+        description: "API-key requests remaining in the current UTC day.",
         schema: { type: "integer", minimum: 0, example: 99 },
       },
       DailyRateLimitReset: {
@@ -665,6 +667,37 @@ export const openApiDocument: Readonly<Record<string, unknown>> = {
           name: { type: "string" },
           createdAt: { type: "string", format: "date-time" },
           lastUsedAt: { type: ["string", "null"], format: "date-time" },
+        },
+      },
+      ParseJobOfferRequest: {
+        type: "object",
+        required: ["text"],
+        properties: { text: { type: "string", minLength: 1, maxLength: 20000 } },
+      },
+      JobOffer: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "jobTitle",
+          "company",
+          "mainResponsibilities",
+          "requiredTechnologies",
+          "optionalTechnologies",
+          "languages",
+          "workMode",
+          "salary",
+          "benefits",
+        ],
+        properties: {
+          jobTitle: { type: ["string", "null"] },
+          company: { type: ["string", "null"] },
+          mainResponsibilities: { type: "array", items: { type: "string" } },
+          requiredTechnologies: { type: "array", items: { type: "string" } },
+          optionalTechnologies: { type: "array", items: { type: "string" } },
+          languages: { type: "array", items: { type: "string" } },
+          workMode: { type: ["string", "null"] },
+          salary: { type: ["string", "null"] },
+          benefits: { type: "array", items: { type: "string" } },
         },
       },
     },

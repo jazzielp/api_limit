@@ -2,7 +2,7 @@
 
 `api_limit` es una API JSON de Express 5 para registrar cuentas, verificar direcciones de email,
 iniciar sesión con contraseña, gestionar perfiles, gestionar claves de API y acceder a un recurso de
-ejemplo protegido por clave de API con una cuota diaria por usuario.
+análisis de ofertas de trabajo autenticado por clave de API con una cuota diaria por usuario.
 
 ## Vista general
 
@@ -15,8 +15,8 @@ ejemplo protegido por clave de API con una cuota diaria por usuario.
 | Documentación interactiva            | `/docs`                                                |
 | Contrato OpenAPI 3.1                 | `/openapi.json`                                        |
 | Autenticación de cuenta              | `Authorization: Bearer <access-token>`                 |
-| Autenticación del recurso protegido  | `X-API-Key: <api-key>`                                 |
-| Cuota diaria del recurso protegido   | 100 solicitudes por usuario y día UTC                  |
+| Autenticación del recurso de ofertas | `X-API-Key: <api-key>`                                 |
+| Cuota diaria del recurso de ofertas  | 100 solicitudes por usuario y día UTC                  |
 
 El operador del despliegue define la URL base de producción. Las rutas de este documento son relativas
 a esa URL.
@@ -76,7 +76,7 @@ curl -X POST http://localhost:3000/auth/login \
   -d '{"email":"alice@example.com","password":"Password123"}'
 ```
 
-Con el JWT devuelto, crea una clave de API y úsala en el recurso protegido:
+Con el JWT devuelto, crea una clave de API y úsala en el recurso de ofertas de trabajo:
 
 ```bash
 curl -X POST http://localhost:3000/api-keys \
@@ -84,8 +84,10 @@ curl -X POST http://localhost:3000/api-keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"production-client"}'
 
-curl -i http://localhost:3000/protected \
-  -H 'X-API-Key: <api-key>'
+curl -i -X POST http://localhost:3000/job-offers/parse \
+  -H 'X-API-Key: <api-key>' \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Senior Backend Engineer en Acme Corp. Node.js, TypeScript, PostgreSQL."}'
 ```
 
 ## Autenticación
@@ -140,7 +142,7 @@ Si falta el header o no comienza con `Bearer `, se devuelve:
 
 ### Claves de API
 
-Usa una clave de API únicamente para `/protected`:
+Usa una clave de API únicamente para `/job-offers/*`:
 
 ```http
 X-API-Key: apk_<key-material>
@@ -172,7 +174,7 @@ Los cambios de contraseña no revocan las claves de API. Revoca las claves expl�
 | `POST`   | `/api-keys`                 | JWT           | `201` |
 | `GET`    | `/api-keys`                 | JWT           | `200` |
 | `DELETE` | `/api-keys/:id`             | JWT           | `204` |
-| `GET`    | `/protected`                | Clave de API  | `200` |
+| `POST`   | `/job-offers/parse`         | Clave de API  | `200` |
 
 Los seis endpoints `/auth/*` también usan el [límite de intentos de autenticación](#límite-de-intentos-de-autenticación).
 
@@ -662,18 +664,30 @@ respuestas de listado posteriores.
 El mismo `404` se aplica cuando la clave no existe o pertenece a otra cuenta. Revocar una clave ya revocada
 es idempotente y devuelve `204`.
 
-## Recurso protegido
+## Ofertas de trabajo
 
-### `GET /protected`
+### `POST /job-offers/parse`
 
-Autentica una clave de API y consume una solicitud de la cuota diaria del usuario propietario.
+Autentica una clave de API, consume una solicitud de la cuota diaria del usuario propietario y
+devuelve la oferta de trabajo como campos estructurados.
+
+> **El análisis todavía no está implementado.** El endpoint valida la solicitud y devuelve una oferta
+> de trabajo simulada fija; el `text` enviado se ignora por ahora. La estructura de la respuesta que
+> aparece abajo es el contrato que completará el análisis real, así que los clientes ya pueden
+> integrarse contra ella.
 
 **Solicitud**
 
 ```bash
-curl -i http://localhost:3000/protected \
-  -H 'X-API-Key: <api-key>'
+curl -i -X POST http://localhost:3000/job-offers/parse \
+  -H 'X-API-Key: <api-key>' \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Senior Backend Engineer en Acme Corp. Node.js, TypeScript, PostgreSQL."}'
 ```
+
+| Campo  | Tipo   | Obligatorio | Restricciones          |
+| ------ | ------ | ----------- | ---------------------- |
+| `text` | string | Sí          | De 1 a 20000 caracteres |
 
 **Respuesta: `200 OK`**
 
@@ -685,12 +699,34 @@ X-RateLimit-Reset: 1786147200
 Content-Type: application/json; charset=utf-8
 
 {
-  "status": "ok"
+  "jobTitle": "Senior Backend Engineer",
+  "company": "Acme Corp",
+  "mainResponsibilities": [
+    "Design and maintain REST APIs",
+    "Review pull requests and mentor mid-level engineers",
+    "Own service reliability and observability"
+  ],
+  "requiredTechnologies": ["Node.js", "TypeScript", "PostgreSQL"],
+  "optionalTechnologies": ["Docker", "Kubernetes", "Redis"],
+  "languages": ["English", "Spanish"],
+  "workMode": "Hybrid",
+  "salary": "USD 60,000 - 80,000 per year",
+  "benefits": ["Health insurance", "Annual training budget", "20 paid vacation days"]
 }
 ```
 
+Todos los campos están siempre presentes. `jobTitle`, `company`, `workMode` y `salary` son
+`string | null`; los cuatro campos restantes son siempre arrays de strings, vacíos cuando no se
+encuentra nada.
+
 Los valores numéricos del header anterior son ejemplos. `X-RateLimit-Reset` cambia con la próxima
 medianoche UTC.
+
+**Respuesta: `400 Bad Request`**
+
+Se devuelve cuando `text` falta, está vacío, no es un string o supera los 20000 caracteres. La
+validación ocurre antes del consumo de la cuota, por lo que una solicitud rechazada no cuenta contra
+el límite diario.
 
 **Respuesta: `429 Too Many Requests`**
 
@@ -734,7 +770,7 @@ RateLimit-Reset: 900
 ```
 
 Los headers heredados `X-RateLimit-*` están deshabilitados para las rutas de autenticación. La cuota diaria
-separada de `GET /protected` usa los headers personalizados `X-RateLimit-*` documentados abajo.
+separada de `POST /job-offers/parse` usa los headers personalizados `X-RateLimit-*` documentados abajo.
 
 `RateLimit-Remaining` y `RateLimit-Reset` varían según la solicitud. Cuando se excede el límite,
 `express-rate-limit` también emite `Retry-After`, medido en segundos enteros hasta que se reinicia la
@@ -760,7 +796,7 @@ realmente incluido.
 
 ### Límite diario de claves de API
 
-`GET /protected` permite 100 solicitudes exitosas por usuario y día calendario UTC. Todas las claves de API
+`POST /job-offers/parse` permite 100 solicitudes exitosas por usuario y día calendario UTC. Todas las claves de API
 activas del mismo usuario comparten un contador. La operación del contador se serializa en PostgreSQL para
 que las solicitudes simultáneas no puedan eludir la cuota.
 
@@ -773,9 +809,9 @@ La solicitud número 100 tiene éxito con `X-RateLimit-Remaining: 0`. Las solici
 | `X-RateLimit-Remaining` | Solicitudes exitosas restantes durante el día UTC actual      |
 | `X-RateLimit-Reset`     | Marca de tiempo Unix en segundos de la próxima medianoche UTC |
 
-Estos headers `X-RateLimit-*` se devuelven en las respuestas exitosas y en las respuestas de `/protected`
-que exceden el límite diario. Los fallos de autenticación de la clave de API ocurren antes del consumo de
-la cuota y no los incluyen.
+Estos headers `X-RateLimit-*` se devuelven en las respuestas exitosas y en las respuestas de
+`/job-offers/parse` que exceden el límite diario. Los fallos de autenticación de la clave de API y de
+validación del cuerpo ocurren antes del consumo de la cuota y no los incluyen.
 
 ## Validación y errores
 
