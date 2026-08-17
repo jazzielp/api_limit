@@ -13,6 +13,8 @@ describe("envSchema", () => {
     MAIL_DRIVER: "console",
     MAIL_FROM: "test@example.com",
     RESET_PASSWORD_URL: "http://localhost:3001/reset-password",
+    OEPNIA_API_KEY: "test-openai-api-key",
+    OPENIA_MODEL: "gpt-5-mini",
     LOG_LEVEL: "silent",
   } as const;
 
@@ -108,6 +110,8 @@ describe("loadEnv", () => {
     process.env.DATABASE_URL = "postgresql://localhost/api_limit_test";
     process.env.JWT_SECRET = "test-secret-must-be-at-least-32-characters-long";
     process.env.RESET_PASSWORD_URL = "http://localhost:3000/reset-password";
+    process.env.OEPNIA_API_KEY = "test-openai-api-key";
+    process.env.OPENIA_MODEL = "gpt-5-mini";
 
     const env = loadEnv();
     expect(env.NODE_ENV).toBe("test");

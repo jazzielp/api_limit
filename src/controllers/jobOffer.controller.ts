@@ -2,8 +2,12 @@ import type { Request, Response } from "express";
 import { RateLimitExceededError } from "../lib/errors.js";
 import { jobOfferService } from "../services/jobOffer.service.js";
 import { rateLimitService } from "../services/rateLimit.service.js";
+import  { type IAService } from "../types/AIServices.js";
 
 export const jobOfferController = {
+
+  const services: IAService[] = [];
+
   async parse(req: Request, res: Response) {
     const userId = req.apiKeyUserId!;
 

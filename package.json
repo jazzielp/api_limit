@@ -30,6 +30,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.10.0",
+    "openai": "^7.5.0",
     "pg": "^8.13.0",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
@@ -52,6 +53,8 @@
     "vitest": "^2.1.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["argon2"]
+    "onlyBuiltDependencies": [
+      "argon2"
+    ]
   }
 }

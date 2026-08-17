@@ -43,14 +43,18 @@ export type TrustProxy = boolean | number | string;
 
 export const envSchema = z
   .object({
-    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     DATABASE_URL: z.string().min(1),
     JWT_SECRET: z.string().min(32),
     JWT_ISSUER: z.string().min(1).default("api_limit"),
     JWT_AUDIENCE: z.string().min(1).default("api_limit_users"),
     ACCESS_TOKEN_TTL_MINUTES: z.coerce.number().int().min(1).default(15),
-    MAIL_DRIVER: z.enum([MAIL_DRIVER.CONSOLE, MAIL_DRIVER.SMTP]).default(MAIL_DRIVER.CONSOLE),
+    MAIL_DRIVER: z
+      .enum([MAIL_DRIVER.CONSOLE, MAIL_DRIVER.SMTP])
+      .default(MAIL_DRIVER.CONSOLE),
     MAIL_FROM: z.email().default("noreply@example.com"),
     RESET_PASSWORD_URL: z.url().optional(),
     SMTP_HOST: z.string().optional(),
@@ -58,6 +62,8 @@ export const envSchema = z
     SMTP_SECURE: z.coerce.boolean().default(false),
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
+    OEPNIA_API_KEY: z.string().min(1),
+    OPENIA_MODEL: z.string().min(1),
     LOG_LEVEL: z
       .enum([
         LOG_LEVEL.TRACE,
@@ -74,7 +80,8 @@ export const envSchema = z
   .superRefine((data, ctx) => {
     if (
       data.NODE_ENV === "production" &&
-      (data.RESET_PASSWORD_URL === undefined || data.RESET_PASSWORD_URL.length === 0)
+      (data.RESET_PASSWORD_URL === undefined ||
+        data.RESET_PASSWORD_URL.length === 0)
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -119,7 +126,10 @@ export function loadEnv(): Env {
   const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
-    throw new ConfigurationError("Invalid environment configuration", parsed.error.issues);
+    throw new ConfigurationError(
+      "Invalid environment configuration",
+      parsed.error.issues,
+    );
   }
 
   return parsed.data;
